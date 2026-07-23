@@ -1,0 +1,75 @@
+name: .NET CI
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # 1. Clona il repository nel runner
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Informazioni sul runner
+      - name: Show runner information
+        run: |
+          echo "Current user:"
+          whoami
+          echo ""
+          echo "Current directory:"
+          pwd
+          echo ""
+          echo "Operating System:"
+          uname -a
+
+      # 3. Mostra il contenuto della cartella
+      - name: List repository files
+        run: |
+          ls -la
+
+      # 4. Cerca Solution e Project
+      - name: Find Solution and Project
+        run: |
+          echo "Searching for .sln..."
+          find . -name "*.sln"
+
+          echo ""
+          echo "Searching for .csproj..."
+          find . -name "*.csproj"
+
+      # 5. Installa .NET
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # 6. Mostra informazioni su .NET
+      - name: Show .NET information
+        run: |
+          dotnet --info
+
+      # 7. Restore
+      - name: Restore packages
+        run: |
+          dotnet restore
+
+      # 8. Build
+      - name: Build project
+        run: |
+          dotnet build --configuration Release --no-restore
+
+      # 9. Test
+      - name: Run tests
+        run: |
+          dotnet test --no-build --verbosity normal
