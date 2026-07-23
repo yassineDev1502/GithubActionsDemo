@@ -1,0 +1,41 @@
+name: CD - Deploy to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore GithubActionsDemo.sln
+
+      - name: Build
+        run: dotnet build GithubActionsDemo.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test GithubActionsDemo.sln --no-build --verbosity normal
+
+      - name: Publish
+        run: dotnet publish GithubActionsDemo.Web.csproj -c Release -o ./publish
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: forgithub
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish
