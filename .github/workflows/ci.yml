@@ -59,17 +59,14 @@ jobs:
         run: |
           dotnet --info
 
-      # 7. Restore
+            # Restore
       - name: Restore packages
-        run: |
-          dotnet restore
+        run: dotnet restore GithubActionsDemo.sln
 
-      # 8. Build
+      # Build
       - name: Build project
-        run: |
-          dotnet build --configuration Release --no-restore
+        run: dotnet build GithubActionsDemo.sln --configuration Release --no-restore
 
-      # 9. Test
+      # Test
       - name: Run tests
-        run: |
-          dotnet test --no-build --verbosity normal
+        run: dotnet test GithubActionsDemo.sln --no-build --verbosity normal
