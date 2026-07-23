@@ -1,23 +1,26 @@
-name: CD - Deploy to Azure App Service
+name: CD - Multi Environment Deployment
 
 on:
   push:
     branches:
+      - dev
+      - test
       - main
 
 permissions:
   contents: read
 
 env:
-  AZURE_WEBAPP_NAME: forgithub
   DOTNET_VERSION: '9.0.x'
 
 jobs:
-  build-and-deploy:
+
+  build:
+    name: Build & Publish
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup .NET
@@ -32,14 +35,82 @@ jobs:
         run: dotnet build GithubActionsDemo.sln --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test GithubActionsDemo.sln --configuration Release --no-build --verbosity normal
+        run: dotnet test GithubActionsDemo.sln --configuration Release --no-build
 
       - name: Publish
         run: dotnet publish GithubActionsDemo.Web.csproj --configuration Release --no-build --output ./publish
 
-      - name: Deploy to Azure Web App
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp
+          path: ./publish
+
+  deploy-dev:
+    name: Deploy Development
+    if: github.ref == 'refs/heads/dev'
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: Development
+
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: webapp
+          path: ./publish
+
+      - name: Deploy Development
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          app-name: forgithub-dev
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish
+
+  deploy-test:
+    name: Deploy Test
+    if: github.ref == 'refs/heads/test'
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: Test
+
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: webapp
+          path: ./publish
+
+      - name: Deploy Test
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: forgithub-test
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish
+
+  deploy-production:
+    name: Deploy Production
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: Production
+
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: webapp
+          path: ./publish
+
+      - name: Deploy Production
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: forgithub
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./publish
