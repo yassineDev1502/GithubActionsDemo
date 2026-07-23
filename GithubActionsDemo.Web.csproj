@@ -6,4 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include=".githubl\workflows\ci.yml" />
+  </ItemGroup>
+
 </Project>
